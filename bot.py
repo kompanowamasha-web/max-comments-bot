@@ -95,9 +95,9 @@ async def router(event: MessageCreated):
         await event.message.answer(
             "👋 Привет! Я бот Комментарии для канала.\n\n"
             "Давай настроим твоего бота.\n\n"
-            "**Шаг 1 из 2:**\n"
-            "Отправь мне **ссылку на твой канал**.\n\n"
-            "Ссылка выглядит так: `https://max.ru/c/XXXXXXXX`"
+            "Шаг 1 из 2:\n"
+            "Отправь мне ссылку на твой канал.\n\n"
+            "Ссылка выглядит так: https://max.ru/c/XXXXXXXX"
         )
         return
 
@@ -121,8 +121,8 @@ async def router(event: MessageCreated):
         save_settings()
         await event.message.answer(
             "✅ Ссылка на канал сохранена\n\n"
-            "**Шаг 2 из 2:**\n"
-            "Отправь мне **ссылку на чат для обсуждений**"
+            "Шаг 2 из 2:\n"
+            "Отправь мне ссылку на чат для обсуждений"
         )
 
     elif waiting_for == "discussion_url":
