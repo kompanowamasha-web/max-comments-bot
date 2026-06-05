@@ -5,6 +5,7 @@ import os
 from maxapi import Bot, Dispatcher
 from maxapi.types import MessageCreated
 from maxapi.types.attachments import AttachmentButton, ButtonsPayload, LinkButton
+from maxapi.enums.chat_type import ChatType
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,10 +18,10 @@ dp = Dispatcher()
 
 @dp.message_created()
 async def on_channel_post(event: MessageCreated):
-    if not event.message.channel:
+    if event.message.recipient.chat_type != ChatType.CHANNEL:
         return
 
-    chat_id = event.message.chat_id
+    chat_id = event.message.recipient.chat_id
     message_id = event.message.id
 
     keyboard = AttachmentButton(
