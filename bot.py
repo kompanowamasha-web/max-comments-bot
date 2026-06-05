@@ -18,11 +18,20 @@ dp = Dispatcher()
 
 @dp.message_created()
 async def on_channel_post(event: MessageCreated):
-    if event.message.recipient.chat_type != ChatType.CHANNEL:
+    chat_type = event.message.recipient.chat_type
+    chat_id = event.message.recipient.chat_id
+    logging.info(f"📨 Новое сообщение: chat_id={chat_id}, chat_type={chat_type}")
+
+    if chat_type != ChatType.CHANNEL:
+        logging.info(f"⏭️ Пропускаем: не канал (chat_type={chat_type})")
         return
 
-    chat_id = event.message.recipient.chat_id
-    message_id = event.message.body.mid
+    message_id = event.message.body.mid if event.message.body else None
+    logging.info(f"📝 Сообщение в канале: chat_id={chat_id}, message_id={message_id}")
+
+    if not message_id:
+        logging.warning("⚠️ message_id не найден (body=None)")
+        return
 
     keyboard = AttachmentButton(
         type="inline_keyboard",
@@ -33,11 +42,15 @@ async def on_channel_post(event: MessageCreated):
         ),
     )
 
-    await bot.edit_message(
-        chat_id=chat_id,
-        message_id=message_id,
-        attachments=[keyboard],
-    )
+    try:
+        await bot.edit_message(
+            chat_id=chat_id,
+            message_id=message_id,
+            attachments=[keyboard],
+        )
+        logging.info(f"✅ Кнопка добавлена к сообщению {message_id}")
+    except Exception as e:
+        logging.error(f"❌ Ошибка при edit_message: {e}")
 
 
 async def main():
