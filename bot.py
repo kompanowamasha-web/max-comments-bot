@@ -22,7 +22,7 @@ async def on_channel_post(event: MessageCreated):
         return
 
     chat_id = event.message.recipient.chat_id
-    message_id = event.message.id
+    message_id = event.message.body.mid
 
     keyboard = AttachmentButton(
         type="inline_keyboard",
