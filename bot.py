@@ -16,28 +16,33 @@ API_BASE_URL = "https://platform-api.max.ru"
 bot = Bot(TOKEN)
 dp = Dispatcher()
 
-# Хранилище ссылок (пока в памяти)
+# Хранилище ссылок
 discussion_urls = []
 
 
-async def send_message(chat_id: int, text: str):
-    """Отправляет сообщение в чат."""
+async def send_message_to_user(user_id: int, text: str):
+    """Отправляет сообщение пользователю в личный чат."""
     async with aiohttp.ClientSession() as session:
         headers = {
             "Authorization": TOKEN,
             "Content-Type": "application/json"
         }
         url = f"{API_BASE_URL}/messages"
-        payload = {"chat_id": chat_id, "text": text}
+        # Для личного чата используем user_id
+        payload = {"user_id": user_id, "text": text}
 
         async with session.post(url, headers=headers, json=payload) as resp:
-            if resp.status != 200:
+            if resp.status == 200:
+                logging.info(f"✅ Сообщение отправлено пользователю {user_id}")
+                return True
+            else:
                 error_text = await resp.text()
-                logging.error(f"Ошибка при отправке: {resp.status} - {error_text}")
+                logging.error(f"❌ Ошибка при отправке: {resp.status} - {error_text}")
+                return False
 
 
 async def add_button_to_message(message_id: str, discussion_url: str):
-    """Добавляет кнопку к сообщению."""
+    """Добавляет кнопку к сообщению в канале."""
     keyboard = {
         "type": "inline_keyboard",
         "payload": {
@@ -63,17 +68,19 @@ async def add_button_to_message(message_id: str, discussion_url: str):
 
         async with session.put(url, headers=headers, json=payload) as resp:
             if resp.status == 200:
-                logging.info(f"✅ Кнопка добавлена")
+                logging.info(f"✅ Кнопка добавлена к посту {message_id}")
+                return True
             else:
                 error_text = await resp.text()
-                logging.error(f"❌ Ошибка: {resp.status} - {error_text}")
+                logging.error(f"❌ Ошибка при добавлении кнопки: {resp.status} - {error_text}")
+                return False
 
 
 @dp.message_created(Command('start'))
 async def start_command(event: MessageCreated):
-    """Приветствие."""
-    # Берём chat_id из recipient (это точно работает!)
-    chat_id = event.message.recipient.chat_id
+    """Приветствие при команде /start."""
+    # Получаем ID пользователя из recipient
+    user_id = event.message.recipient.user_id
     
     text = (
         "👋 Привет!\n\n"
@@ -87,30 +94,30 @@ async def start_command(event: MessageCreated):
         "(например, https://max.ru/join/XXXXXXXX)"
     )
     
-    await send_message(chat_id, text)
-    logging.info(f"Ответили пользователю в чат {chat_id}")
+    await send_message_to_user(user_id, text)
+    logging.info(f"Ответили пользователю {user_id}")
 
 
 @dp.message_created()
 async def handle_text(event: MessageCreated):
-    """Сохраняет ссылку из сообщения."""
-    # Проверяем, что это личный чат с ботом (не канал)
+    """Сохраняет ссылку из сообщения пользователя."""
+    # Проверяем, что это личный диалог с ботом
     if event.message.recipient.chat_type != ChatType.DIALOG:
         return
     
-    chat_id = event.message.recipient.chat_id
+    user_id = event.message.recipient.user_id
     text = event.message.body.text if event.message.body else ""
     
     # Ищем ссылку
     match = re.search(r'https://max\.ru/join/[\w-]+', text)
     if match:
         discussion_url = match.group(0)
-        discussion_urls.append(discussion_url)  # Сохраняем
-        await send_message(chat_id, f"✅ Ссылка сохранена: {discussion_url}\n\nТеперь я готов! Когда ты опубликуешь пост в канале, я добавлю под ним кнопку 'Прокомментировать'. Кнопка появится в течение 20-30 секунд ⏱️")
+        discussion_urls.append(discussion_url)
+        await send_message_to_user(user_id, f"✅ Ссылка сохранена: {discussion_url}\n\nТеперь я готов! Когда ты опубликуешь пост в канале, я добавлю под ним кнопку 'Прокомментировать'. Кнопка появится в течение 20-30 секунд ⏱️")
     else:
-        # Если это не ссылка, и не команда start - игнорируем
+        # Игнорируем всё, кроме команды /start и ссылок
         if not text.startswith('/'):
-            await send_message(chat_id, "❌ Не нашёл ссылку. Отправь ссылку в формате: https://max.ru/join/XXXXXXXX")
+            await send_message_to_user(user_id, "❌ Не нашёл ссылку. Отправь ссылку в формате: https://max.ru/join/XXXXXXXX")
 
 
 @dp.message_created()
