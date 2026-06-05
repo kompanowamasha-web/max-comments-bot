@@ -19,9 +19,8 @@ dp = Dispatcher()
 
 
 async def edit_message_with_button(chat_id: int, message_id: str, button_url: str):
-    """Редактирует сообщение через прямой API-запрос (как в документации MAX)"""
+    """Редактирует сообщение через прямой API-запрос"""
     
-    # Формируем клавиатуру
     keyboard = {
         "type": "inline_keyboard",
         "payload": {
@@ -37,7 +36,6 @@ async def edit_message_with_button(chat_id: int, message_id: str, button_url: st
         }
     }
     
-    # PUT-запрос согласно документации: /messages?message_id={message_id}
     async with aiohttp.ClientSession() as session:
         headers = {
             "Authorization": TOKEN,
@@ -56,14 +54,13 @@ async def edit_message_with_button(chat_id: int, message_id: str, button_url: st
 
 @dp.message_created()
 async def on_channel_post(event: MessageCreated):
-    # Проверяем, что это сообщение в канале
     if event.message.recipient.chat_type != ChatType.CHANNEL:
         return
 
+    # ✅ ИСПРАВЛЕНО: используем message_id вместо id
     chat_id = event.message.recipient.chat_id
-    message_id = event.message.id
+    message_id = event.message.message_id   # <--- ВОТ ЭТА СТРОЧКА ИЗМЕНЕНА
     
-    # Добавляем кнопку под постом
     await edit_message_with_button(chat_id, message_id, DISCUSSION_URL)
 
 
