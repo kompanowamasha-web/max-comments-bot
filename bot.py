@@ -140,9 +140,12 @@ async def router(event: MessageCreated):
 
 
 async def main():
-    load_settings()
-    logging.info("🚀 Бот запущен. Напиши /start")
-    await dp.start_polling(bot)
+    # Отключён: MAX теперь сам добавляет комментарии к постам.
+    # Токен этого бота использует Веня (wb-ab-bot) для публикации постов в канал MAX,
+    # а опрос обновлений здесь мешал бы Вене найти канал. Вернуть: dp.start_polling(bot).
+    logging.info("💤 Бот комментариев отключён — комментарии MAX ставит сам")
+    while True:
+        await asyncio.sleep(3600)
 
 
 if __name__ == "__main__":
